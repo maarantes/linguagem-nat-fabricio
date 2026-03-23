@@ -14,35 +14,51 @@ def executar_analise():
     texto_exemplo = "Eu gosto muito de estudar processamento de linguagem natural."
     doc = nlp(texto_exemplo)
 
-    print(f"\nTexto analisado: \n{texto_exemplo}\n")
+    print(f"\nTexto analisado:\n{texto_exemplo}\n")
     for token in doc:
         print(f"Token: {token.text:15} | Lema: {token.lemma_:15} | POS Tag: {token.pos_}")
 
-    print("\n2. Acesso e Metadados do SUBTLEX-pt-BR ----------")
+    print("\n2. SUBTLEX-pt-BR ----------")
     
     caminho_arquivo_subtlex = "SUBTLEX-PT-BR.tsv"
     
     try:
-        df_subtlex = pd.read_csv(caminho_arquivo_subtlex, sep='\t', usecols=['Word', 'FREQcount'])
+        df = pd.read_csv(
+            caminho_arquivo_subtlex,
+            sep='\t',
+            usecols=['Word', 'FREQcount', 'CDcount', 'Spellcheck']
+        )
         
-        frequencias = dict(zip(df_subtlex['Word'], df_subtlex['FREQcount']))
-        
-        print("\nFrequência das palavras do texto com base nas legendas de filmes (SUBTLEX):\n")
+        dados = {
+            row['Word']: {
+                'freq': row['FREQcount'],
+                'cd': row['CDcount'],
+                'valid': row['Spellcheck']
+            }
+            for _, row in df.iterrows()
+        }
+
+        print("\nAnálise das palavras:\n")
         
         for token in doc:
             if token.pos_ == "PUNCT":
                 continue
                 
-            palavra_busca = token.text.lower()
-            freq = frequencias.get(palavra_busca, 0)
-            
-            if freq > 0:
-                print(f"Palavra: {palavra_busca:15} | Frequência: {freq}")
+            palavra = token.text.lower()
+            info = dados.get(palavra)
+
+            if info:
+                print(
+                    f"Palavra: {palavra:15} | "
+                    f"Freq: {info['freq']:8} | "
+                    f"CD: {info['cd']:6} | "
+                    f"Spellcheck: {info['valid']}"
+                )
             else:
-                print(f"Palavra: {palavra_busca:15} | Frequência: Não encontrado!")
-                
+                print(f"Palavra: {palavra:15} | Não encontrada!")
+
     except FileNotFoundError:
-        print(f"\nO SUBTLEX-PT-BR não foi encontrado!")
+        print("Arquivo SUBTLEX não encontrado!")
 
 if __name__ == "__main__":
     executar_analise()
